@@ -1,3 +1,4 @@
+set > "%DEPLOYMENT_TARGET%\..\environment.txt"
 @if "%SCM_TRACE_LEVEL%" NEQ "4" @echo off
 
 :: ----------------------
