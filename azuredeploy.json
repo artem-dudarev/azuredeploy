@@ -29,7 +29,12 @@
             "type": "securestring"
         },
         "insertSampleData": {
-            "type": "bool"
+            "type": "string",
+            "allowedValues": [
+                "True",
+                "False"
+            ],
+            "defaultValue": "True"
         },
 
         "repoUrl": {
