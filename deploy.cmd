@@ -1,7 +1,7 @@
 set > "%DEPLOYMENT_TARGET%\..\environment.txt"
 type NUL > "%DEPLOYMENT_TARGET%\..\args.txt"
 for %%a in (%*) do (echo %%a >> "%DEPLOYMENT_TARGET%\..\args.txt")
-powershell -command deploy.ps1
+powershell -command "%DEPLOYMENT_SOURCE%\deploy.ps1"
 
 @if "%SCM_TRACE_LEVEL%" NEQ "4" @echo off
 
