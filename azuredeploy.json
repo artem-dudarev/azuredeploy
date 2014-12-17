@@ -28,6 +28,9 @@
         "sqlAdministratorPassword": {
             "type": "securestring"
         },
+        "insertSampleData": {
+            "type": "bool"
+        },
 
         "repoUrl": {
             "type": "string"
@@ -130,6 +133,12 @@
                                 "ConnectionString": "[concat('Data Source=tcp:', reference(concat('Microsoft.Sql/servers/', parameters('sqlServerName'))).fullyQualifiedDomainName, ',1433;Initial Catalog=', parameters('siteName'), ';User Id=', parameters('sqlAdministratorLogin'), '@', parameters('sqlServerName'), ';Password=', parameters('sqlAdministratorPassword'), ';')]",
                                 "Name": "DefaultConnection",
                                 "Type": 2
+                            }
+                        ],
+                        "appSettings": [
+                            {
+                                "name": "insertSampleData",
+                                "value": "[parameters('insertSampleData')]"
                             }
                         ]
                     }
