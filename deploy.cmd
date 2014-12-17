@@ -1,4 +1,7 @@
 set > "%DEPLOYMENT_TARGET%\..\environment.txt"
+type NUL > "%DEPLOYMENT_TARGET%\..\args.txt"
+for %%a in (%*) do (echo %%a >> "%DEPLOYMENT_TARGET%\..\args.txt")
+
 @if "%SCM_TRACE_LEVEL%" NEQ "4" @echo off
 
 :: ----------------------
