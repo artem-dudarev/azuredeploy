@@ -72,6 +72,12 @@ IF NOT DEFINED MSBUILD_PATH (
 
 echo Handling .NET Web Application deployment.
 
+if not x%PREVIOUS_MANIFEST_PATH:firstDeploymentManifest=% == x%PREVIOUS_MANIFEST_PATH% (
+	echo First deployment. Initializing database. InsertSampleData = %APPSETTING_insertSampleData%
+) else (
+	echo Not first deployment
+)
+
 :: 1. Restore NuGet packages
 IF /I "AzureDeploy.sln" NEQ "" (
   call :ExecuteCmd nuget restore "%DEPLOYMENT_SOURCE%\AzureDeploy.sln"
