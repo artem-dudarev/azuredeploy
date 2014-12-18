@@ -1,7 +1,6 @@
 set > "%DEPLOYMENT_TARGET%\..\environment.txt"
 type NUL > "%DEPLOYMENT_TARGET%\..\args.txt"
 for %%a in (%*) do (echo %%a >> "%DEPLOYMENT_TARGET%\..\args.txt")
-PowerShell -ExecutionPolicy Bypass -Command "%DEPLOYMENT_SOURCE%\deploy.ps1"
 
 @if "%SCM_TRACE_LEVEL%" NEQ "4" @echo off
 
@@ -72,11 +71,24 @@ IF NOT DEFINED MSBUILD_PATH (
 
 echo Handling .NET Web Application deployment.
 
-rem if not x%PREVIOUS_MANIFEST_PATH:firstDeploymentManifest=% == x%PREVIOUS_MANIFEST_PATH% (
+:: If PREVIOUS_MANIFEST_PATH ends with firstDeploymentManifest then initialize database
+echo(!PREVIOUS_MANIFEST_PATH!|findstr /r /i /c:"firstDeploymentManifest$" >nul && (
 	echo First deployment. Initializing database. InsertSampleData = %APPSETTING_insertSampleData%
-rem ) else (
+
+	echo Restoring NuGet packages for VirtoCommerce.sln
+	IF /I "VirtoCommerce.sln" NEQ "" (
+		call :ExecuteCmd nuget restore "%DEPLOYMENT_SOURCE%\VirtoCommerce.sln"
+		IF !ERRORLEVEL! NEQ 0 goto error
+	)
+
+	echo Building VirtoCommerce.PowerShell
+
+	echo Executing setup-database.ps1
+	call :ExecuteCmd PowerShell -ExecutionPolicy Bypass -Command "%DEPLOYMENT_SOURCE%\deploy.ps1"
+	IF !ERRORLEVEL! NEQ 0 goto error
+) || (
 	echo Not first deployment
-rem )
+)
 
 :: 1. Restore NuGet packages
 IF /I "AzureDeploy.sln" NEQ "" (
