@@ -76,7 +76,7 @@ echo(!PREVIOUS_MANIFEST_PATH!|findstr /r /i /c:"firstDeploymentManifest$" >nul &
 	echo First deployment. Initializing database. InsertSampleData = %APPSETTING_insertSampleData%
 
 	echo Restoring NuGet packages for VirtoCommerce.sln
-	IF /I "VirtoCommerce.sln" NEQ "" (
+	IF EXIST "%DEPLOYMENT_SOURCE%\VirtoCommerce.sln" (
 		call :ExecuteCmd nuget restore "%DEPLOYMENT_SOURCE%\VirtoCommerce.sln"
 		IF !ERRORLEVEL! NEQ 0 goto error
 	)
