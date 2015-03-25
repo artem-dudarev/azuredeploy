@@ -112,7 +112,7 @@
                                 "value": "[parameters('deployApplications')]"
                             }
                         ],
-                        "virtualApplications1": "[variables(parameters('deployApplications')).apps]"
+                        "virtualApplications1": variables(parameters('deployApplications')).apps
                     }
                 },
                 {
