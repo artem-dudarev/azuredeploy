@@ -47,6 +47,14 @@
             "defaultValue": "0"
         }
     },
+    "variables": {
+        "Web Admin Only": {
+            "rootDir": "admin"
+        },
+        "Web Admin and Store": {
+            "rootDir": "store"
+        }
+    },
     "resources": [
         {
             "type": "Microsoft.Web/serverFarms",
@@ -91,13 +99,13 @@
                             }
                         ],
                         "virtualApplications": [
-                            { 
-                                "virtualPath":  "/",
-                                "physicalPath":  "site\\wwwroot\\store"
+                            {
+                                "virtualPath": "/",
+                                "physicalPath": "[concat('site\\wwwroot\\', variables(parameters('deployApplications')).rootDir)]"
                             },
-                            { 
-                                "virtualPath":  "/admin",
-                                "physicalPath":  "site\\wwwroot\\admin"
+                            {
+                                "virtualPath": "/admin",
+                                "physicalPath": "site\\wwwroot\\admin"
                             }
                         ]
                     }
