@@ -49,24 +49,10 @@
     },
     "variables": {
         "Web Admin Only": {
-            "apps": [
-                {
-                    "virtualPath": "/",
-                    "physicalPath": "site\\wwwroot\\admin"
-                }
-            ]
+            "rootDir": "admin"
         },
         "Web Admin and Store": {
-            "apps": [
-                {
-                    "virtualPath": "/",
-                    "physicalPath": "site\\wwwroot\\store"
-                },
-                {
-                    "virtualPath": "/admin",
-                    "physicalPath": "site\\wwwroot\\admin"
-                }
-            ]
+            "rootDir": "store"
         }
     },
     "resources": [
@@ -101,7 +87,7 @@
                 {
                     "type": "config",
                     "name": "web",
-                    "apiVersion": "2014-06-01",
+                    "apiVersion": "2014-04-01",
                     "dependsOn": [
                         "[concat('Microsoft.Web/Sites/', parameters('siteName'))]"
                     ],
@@ -112,7 +98,16 @@
                                 "value": "[parameters('deployApplications')]"
                             }
                         ],
-                        "virtualApplications1": variables(parameters('deployApplications')).apps
+                        "virtualApplications": [
+                            {
+                                "virtualPath": "/",
+                                "physicalPath": "[concat('site\\wwwroot\\', variables(parameters('deployApplications')).rootDir)]"
+                            },
+                            {
+                                "virtualPath": "/admin",
+                                "physicalPath": "site\\wwwroot\\admin"
+                            }
+                        ]
                     }
                 },
                 {
