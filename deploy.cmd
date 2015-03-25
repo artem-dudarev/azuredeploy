@@ -19,12 +19,19 @@ IF %ERRORLEVEL% NEQ 0 (
   goto error
 )
 
+:: If nuget.exe does not exist in one of the PATH directories, use \Tools\NuGet\nuget.exe
+SET NUGET=nuget.exe
+where nuget.exe 2>nul >nul
+IF %ERRORLEVEL% NEQ 0 (
+    SET NUGET=%~dp0%Tools\NuGet\nuget.exe
+)
+
 :: Setup
 :: -----
 
 setlocal enabledelayedexpansion
 
-SET ARTIFACTS=%~dp0%..\artifacts
+SET ARTIFACTS=%~dp0%artifacts
 
 IF NOT DEFINED DEPLOYMENT_SOURCE (
   SET DEPLOYMENT_SOURCE=%~dp0%.
@@ -65,49 +72,37 @@ IF NOT DEFINED MSBUILD_PATH (
   SET MSBUILD_PATH=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\msbuild.exe
 )
 
+SET BUILD_SOLUTION_DIR=%DEPLOYMENT_SOURCE%
+SET BUILD_SOLUTION_FILE=%BUILD_SOLUTION_DIR%\AzureDeploy.sln
+SET PUBLISHED_WEBSITES=%DEPLOYMENT_TEMP%\_PublishedWebsites
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Deployment
 :: ----------
 
 echo Handling .NET Web Application deployment.
 
-:: If PREVIOUS_MANIFEST_PATH ends with firstDeploymentManifest then initialize database
-echo(!PREVIOUS_MANIFEST_PATH!|findstr /r /i /c:"firstDeploymentManifest$" >nul && (
-	echo First deployment. Initializing database. InsertSampleData = %APPSETTING_insertSampleData%
-
-	echo Restoring NuGet packages for VirtoCommerce.sln
-	IF EXIST "%DEPLOYMENT_SOURCE%\VirtoCommerce.sln" (
-		call :ExecuteCmd nuget restore "%DEPLOYMENT_SOURCE%\VirtoCommerce.sln"
-		IF !ERRORLEVEL! NEQ 0 goto error
-	)
-
-	echo Building VirtoCommerce.PowerShell
-
-	echo Executing setup-database.ps1
-	call :ExecuteCmd PowerShell -ExecutionPolicy Bypass -Command "%DEPLOYMENT_SOURCE%\deploy.ps1"
-	IF !ERRORLEVEL! NEQ 0 goto error
-) || (
-	echo Not first deployment
-)
-
 :: 1. Restore NuGet packages
-IF /I "AzureDeploy.sln" NEQ "" (
-  call :ExecuteCmd nuget restore "%DEPLOYMENT_SOURCE%\AzureDeploy.sln"
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
+call :ExecuteCmd "%NUGET%" restore "%BUILD_SOLUTION_FILE%"
+IF !ERRORLEVEL! NEQ 0 goto error
 
 :: 2. Build to the temporary path
-IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
-  call :ExecuteCmd "%MSBUILD_PATH%" "%DEPLOYMENT_SOURCE%\src\Web2\Web2.csproj" /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="%DEPLOYMENT_TEMP%";AutoParameterizationWebConfigConnectionStrings=false;Configuration=Release /p:SolutionDir="%DEPLOYMENT_SOURCE%\.\\" %SCM_BUILD_ARGS%
-) ELSE (
-  call :ExecuteCmd "%MSBUILD_PATH%" "%DEPLOYMENT_SOURCE%\src\Web2\Web2.csproj" /nologo /verbosity:m /t:Build /p:AutoParameterizationWebConfigConnectionStrings=false;Configuration=Release /p:SolutionDir="%DEPLOYMENT_SOURCE%\.\\" %SCM_BUILD_ARGS%
-)
 
+call :ExecuteCmd "%MSBUILD_PATH%" "%BUILD_SOLUTION_FILE%" /nologo /verbosity:m /t:Build /p:Configuration=Release;DebugType=none;AllowedReferenceRelatedFileExtensions=":";SolutionDir="%BUILD_SOLUTION_DIR%\.\\";OutputPath="%DEPLOYMENT_TEMP%" %SCM_BUILD_ARGS%
 IF !ERRORLEVEL! NEQ 0 goto error
+
+call :ExecuteCmd rename "%PUBLISHED_WEBSITES%\Web1" admin
+IF !ERRORLEVEL! NEQ 0 goto error
+
+call :ExecuteCmd rename "%PUBLISHED_WEBSITES%\Web2" store
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: Clear build output
+call :ExecuteCmd "%MSBUILD_PATH%" "%BUILD_SOLUTION_FILE%" /nologo /verbosity:m /t:Clean /p:Configuration=Release;SolutionDir="%BUILD_SOLUTION_DIR%\.\\" %SCM_BUILD_ARGS%
 
 :: 3. KuduSync
 IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
-  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_TEMP%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd"
+  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%PUBLISHED_WEBSITES%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd"
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 
@@ -123,6 +118,7 @@ goto end
 :ExecuteCmd
 setlocal
 set _CMD_=%*
+echo command=%_CMD_%
 call %_CMD_%
 if "%ERRORLEVEL%" NEQ "0" echo Failed exitCode=%ERRORLEVEL%, command=%_CMD_%
 exit /b %ERRORLEVEL%

@@ -19,22 +19,13 @@
             ],
             "defaultValue": "Free"
         },
-        "sqlServerName": {
-            "type": "string"
-        },
-        "sqlAdministratorLogin": {
-            "type": "string"
-        },
-        "sqlAdministratorPassword": {
-            "type": "securestring"
-        },
-        "insertSampleData": {
+        "deployApplications": {
             "type": "string",
             "allowedValues": [
-                "True",
-                "False"
+                "Web Admin Only",
+                "Web Admin and Store"
             ],
-            "defaultValue": "True"
+            "defaultValue": "Web Admin Only"
         },
 
         "repoUrl": {
@@ -57,46 +48,6 @@
         }
     },
     "resources": [
-        {
-            "type": "Microsoft.Sql/servers",
-            "name": "[parameters('sqlServerName')]",
-            "location": "[parameters('siteLocation')]",
-            "apiVersion": "2.0",
-            "properties": {
-                "administratorLogin": "[parameters('sqlAdministratorLogin')]",
-                "administratorLoginPassword": "[parameters('sqlAdministratorPassword')]"
-            },
-            "resources": [
-                {
-                    "type": "databases",
-                    "name": "[parameters('siteName')]",
-                    "location": "[parameters('siteLocation')]",
-                    "apiVersion": "2.0",
-                    "dependsOn": [
-                        "[concat('Microsoft.Sql/servers/', parameters('sqlServerName'))]"
-                    ],
-                    "properties": {
-                        "edition": "Web",
-                        "collation": "SQL_Latin1_General_CP1_CI_AS",
-                        "maxSizeBytes": "1073741824",
-                        "requestedServiceObjectiveId": "910b4fcb-8a29-4c3e-958f-f7ba794388b2"
-                    }
-                },
-                {
-                    "type": "firewallrules",
-                    "name": "AllowAllWindowsAzureIps",
-                    "location": "[parameters('siteLocation')]",
-                    "apiVersion": "2.0",
-                    "dependsOn": [
-                        "[concat('Microsoft.Sql/servers/', parameters('sqlServerName'))]"
-                    ],
-                    "properties": {
-                        "endIpAddress": "0.0.0.0",
-                        "startIpAddress": "0.0.0.0"
-                    }
-                }
-            ]
-        },
         {
             "type": "Microsoft.Web/serverFarms",
             "name": "[parameters('hostingPlanName')]",
@@ -133,17 +84,20 @@
                         "[concat('Microsoft.Web/Sites/', parameters('siteName'))]"
                     ],
                     "properties": {
-                        "connectionStrings": [
-                            {
-                                "ConnectionString": "[concat('Data Source=tcp:', reference(concat('Microsoft.Sql/servers/', parameters('sqlServerName'))).fullyQualifiedDomainName, ',1433;Initial Catalog=', parameters('siteName'), ';User Id=', parameters('sqlAdministratorLogin'), '@', parameters('sqlServerName'), ';Password=', parameters('sqlAdministratorPassword'), ';')]",
-                                "Name": "DefaultConnection",
-                                "Type": 2
-                            }
-                        ],
                         "appSettings": [
                             {
-                                "name": "insertSampleData",
-                                "value": "[parameters('insertSampleData')]"
+                                "name": "VirtoCommerce_DeployApplications",
+                                "value": "[parameters('deployApplications')]"
+                            }
+                        ],
+                        "virtualApplications": [
+                            { 
+                                "virtualPath":  "/",
+                                "physicalPath":  "site\\wwwroot\\store"
+                            },
+                            { 
+                                "virtualPath":  "/admin",
+                                "physicalPath":  "site\\wwwroot\\admin"
                             }
                         ]
                     }
