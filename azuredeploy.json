@@ -105,11 +105,13 @@
                             },
                             {
                                 "virtualPath": "/admin",
-                                "physicalPath": "site\\wwwroot\\admin"
-                            },
-                            {
-                                "virtualPath": "/assets",
-                                "physicalPath": "site\\wwwroot\\admin\\App_Data\\Assets"
+                                "physicalPath": "site\\wwwroot\\admin",
+                                "virtualDirectories": [
+                                    {
+                                        "virtualPath": "/assets",
+                                        "physicalPath": "site\\wwwroot\\admin\\App_Data\\Assets"
+                                    }
+                                ]
                             }
                         ]
                     }
